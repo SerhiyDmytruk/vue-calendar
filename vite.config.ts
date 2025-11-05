@@ -6,6 +6,14 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData:
+          '@import "/src/../node_modules/wave-ui/src/wave-ui/scss/_variables.scss";'
+      }
+    }
+  },
   plugins: [
     vue(),
     vueDevTools(),
