@@ -3,89 +3,123 @@ import { ref } from 'vue'
 import VueCal from 'vue-cal'
 import 'vue-cal/dist/vuecal.css'
 
-const events = ref([
-  {
-    id: 1,
-    start: new Date(new Date().setHours(10, 0, 0, 0)),
-    end: new Date(new Date().setHours(11, 0, 0, 0)),
-    title: 'Doctor Appointment',
-    content: 'General check-up',
-    class: 'health'
-  },
-  {
-    id: 2,
-    start: new Date(new Date().setHours(14, 0, 0, 0)),
-    end: new Date(new Date().setHours(15, 0, 0, 0)),
-    title: 'Team Meeting',
-    content: 'Discuss project goals',
-    class: 'work'
-  }
-])
-
+const events = ref([])
 const showDialog = ref(false)
-const selectedEvent = ref(null)
 const editEvent = ref({})
 
+function openAddDialog(payload) {
+  const date = payload?.date instanceof Date ? payload.date : new Date()
+
+  editEvent.value = {
+    title: '',
+    content: '',
+    start: date,
+    end: new Date(date.getTime() + 60 * 60 * 1000),
+    color: '#3498db'
+  }
+  showDialog.value = true
+}
+
 function openDialog({ event }) {
-  selectedEvent.value = event
-  // clone to edit safely
-  editEvent.value = { ...event }
+  editEvent.value = { ...event, __source: event }
   showDialog.value = true
 }
 
 function saveChanges() {
-  const idx = events.value.findIndex(e => e.id === selectedEvent.value.id)
-  if (idx !== -1) {
-    events.value[idx] = { ...editEvent.value }
+  const eventData = {
+    ...editEvent.value,
+    start: new Date(editEvent.value.start),
+    end: new Date(editEvent.value.end)
   }
+
+  if (eventData.id) {
+    // якщо є посилання на оригінал
+    if (eventData.__source) {
+      Object.assign(eventData.__source, eventData)
+    }
+
+    const idx = events.value.findIndex(e => e.id === eventData.id)
+    if (idx !== -1) events.value.splice(idx, 1, eventData)
+  } else {
+    eventData.id = Date.now()
+    events.value.push(eventData)
+  }
+
   showDialog.value = false
+}
+
+function deleteEvent() {
+  events.value = events.value.filter(e => e.id !== editEvent.value.id)
+  showDialog.value = false
+}
+
+function formatDateInput(date) {
+  if (!date) return ''
+  const iso = new Date(date).toISOString()
+  return iso.slice(0, 16) // YYYY-MM-DDTHH:mm
 }
 </script>
 
+
 <template>
-  <vue-cal
-    class="vuecal--blue-theme"
-    :events="events"
-    editable-events
-    @event-click="openDialog"
-  ></vue-cal>
+  <div id="app">
+    <vue-cal
+      class="vuecal--blue-theme"
+      :events="events"
+      @event-dblclick="openDialog"
+      @cell-click="openAddDialog"
+      editable-events
+      draggable
+      active-view="month"
+      :time-from="8 * 60"
+      :time-to="20 * 60"
+      events-on-month-view="short"
+      :overlaps="true" 
+    >
+      <template #event="{ event }">
+        <div class="vuecal__event-title" :style="{ background: event.color }">
+          {{ event.title }}
+        </div>
+      </template>
+    </vue-cal>
 
-  <!-- simple edit dialog -->
-  <div v-if="showDialog" class="dialog">
-    <div class="dialog-content">
-      <h3>Edit event</h3>
+    <!-- Add/Edit dialog -->
+    <div v-if="showDialog" class="dialog">
+      <div class="dialog-content">
+        <h3>{{ editEvent.id ? 'Edit Event' : 'Add Event' }}</h3>
 
-      <label>
-        Title:
-        <input v-model="editEvent.title" />
-      </label>
+        <label>
+          Title:
+          <input v-model="editEvent.title" maxlength="30" />
+        </label>
 
-      <label>
-        Content:
-        <textarea v-model="editEvent.content"></textarea>
-      </label>
+        <label>
+          Content:
+          <textarea v-model="editEvent.content"></textarea>
+        </label>
 
-      <label>
-        Start:
-        <input
-          type="datetime-local"
-          v-model="editEvent.startString"
-          @change="editEvent.start = new Date(editEvent.startString)"
-        />
-      </label>
+        <label>
+          Start:
+          <input type="datetime-local"     :value="formatDateInput(editEvent.start)"
+            @input="e => editEvent.start = new Date(e.target.value)" />
+        </label>
 
-      <label>
-        End:
-        <input
-          type="datetime-local"
-          v-model="editEvent.endString"
-          @change="editEvent.end = new Date(editEvent.endString)"
-        />
-      </label>
+        <label>
+          End:
+          <input type="datetime-local"     :value="formatDateInput(editEvent.end)"
+            @input="e => editEvent.end = new Date(e.target.value)"/>
+        </label>
 
-      <div class="actions">
-        <button @click="saveChanges">💾 Save</button>
-        <button @click="showDialog = false">✖ Close</button>
+        <label>
+          Color:
+          <input type="color" v-model="editEvent.color" />
+        </label>
+
+        <div class="actions">
+          <button @click="saveChanges">💾 Save</button>
+          <button v-if="editEvent.id" @click="deleteEvent">🗑 Delete</button>
+          <button @click="showDialog = false">✖ Close</button>
+        </div>
       </div>
     </div>
   </div>
@@ -95,7 +129,6 @@ function saveChanges() {
 .vuecal {
   height: 90vh;
 }
-
 .dialog {
   position: fixed;
   inset: 0;
@@ -114,16 +147,8 @@ function saveChanges() {
   flex-direction: column;
   gap: 0.5rem;
 }
-.dialog-content input,
-.dialog-content textarea {
-  width: 100%;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 4px;
-}
 .actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 8px;
 }
 </style>
