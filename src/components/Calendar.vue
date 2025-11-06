@@ -1,9 +1,53 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, defineExpose } from 'vue'
 import VueCal from 'vue-cal'
 import 'vue-cal/dist/vuecal.css'
 
-const events = ref([])
+const getInitialEvents = () => {
+  // Get current date for reference
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth()
+  const date = now.getDate()
+
+  return [
+    {
+      id: 1,
+      start: new Date(year, month, date, 10, 30),
+      end: new Date(year, month, date, 12, 0),
+      title: 'Morning Meeting',
+      content: 'Team sync-up meeting',
+      color: '#3498db',
+    },
+    {
+      id: 2,
+      start: new Date(year, month, date + 1, 14, 0),
+      end: new Date(year, month, date + 1, 15, 30),
+      title: 'Client Call',
+      content: 'Project discussion',
+      color: '#2ecc71',
+    },
+    {
+      id: 3,
+      start: new Date(year, month, date - 1, 12, 0),
+      end: new Date(year, month, date -1, 13, 0),
+      title: 'Lunch Break',
+      content: 'Team lunch',
+      color: '#e74c3c',
+      background: true,
+    },
+    {
+      id: 4,
+      start: new Date(year, month, date + 3, 9, 0),
+      end: new Date(year, month, date + 3, 17, 0),
+      title: 'Workshop',
+      content: 'Annual planning workshop',
+      color: '#9b59b6',
+    },
+  ]
+}
+// Initialize events ref with an empty array
+const events = ref(getInitialEvents())
 const showDialog = ref(false)
 const editEvent = ref({})
 
@@ -58,6 +102,9 @@ function formatDateInput(date) {
   const iso = new Date(date).toISOString()
   return iso.slice(0, 16)
 }
+
+// Expose events to the template
+defineExpose({ events })
 </script>
 
 <template>
@@ -82,6 +129,8 @@ function formatDateInput(date) {
           {{ event.title }}
         </div>
       </template>
+      <template #arrow-prev="">Back</template>
+      <template #arrow-next="">Next</template>
     </vue-cal>
 
     <!-- Add/Edit dialog -->
