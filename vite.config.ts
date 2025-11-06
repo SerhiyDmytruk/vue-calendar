@@ -8,6 +8,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './', // Set base to relative path
   css: {
     preprocessorOptions: {
       scss: {

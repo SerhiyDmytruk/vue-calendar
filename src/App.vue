@@ -1,7 +1,7 @@
-<script setup>
-import Header from './components/Header.vue'
-import Navigation from './components/Navigation.vue'
-import Calendar from './components/Calendar.vue'
+<script setup lang="ts">
+import Header from './components/VueHeader.vue'
+import Navigation from './components/VueNavigation.vue'
+import Calendar from './components/VueCalendar.vue'
 </script>
 
 <template>
