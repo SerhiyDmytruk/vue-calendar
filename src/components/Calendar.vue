@@ -75,6 +75,7 @@ function formatDateInput(date) {
       :time-to="20 * 60"
       events-on-month-view="short"
       :overlaps="true"
+      small
     >
       <template #event="{ event }">
         <div class="vuecal__event-title" :style="{ background: event.color }">
@@ -172,7 +173,7 @@ body {
 
 /* Calendar styling */
 .vuecal {
-  min-height: 80vh;
+  min-height: 74vh;
   max-width: 100%;
   border: none !important;
 }
@@ -217,6 +218,11 @@ body {
 }
 
 .vuecal__weekdays-headings {
+  background-color: #f5f6fa;
+  border-color: #f5f6fa;
+  text-transform: uppercase;
+  color: var(--color-gray-700);
+  font-size: 12px;
 }
 
 .vuecal__no-event {
@@ -242,7 +248,20 @@ body {
   }
 }
 
+.vuecal__cell:before {
+  border-color: #f5f6fa;
+}
+
 /* Event slot styling for better look */
+
+.vuecal__event {
+  &:hover {
+    .vuecal__event-delete {
+      transform: translateY(0);
+    }
+  }
+}
+
 .vuecal__event-title {
   min-height: 1.25rem;
   border-radius: 4px;
@@ -253,13 +272,13 @@ body {
   font-size: 0.875rem; /* text-sm */
 }
 
-.vuecal--short-events .vuecal__event-title {
+.vuecal__event-title {
   color: white;
   min-height: 1.75rem;
-}
-
-.vuecal--month-view .vuecal__event-title {
   font-size: 1.05em;
+  position: absolute;
+  width: 100%;
+  height: 100%;
 }
 
 /* Dialog/Modal Styling */
