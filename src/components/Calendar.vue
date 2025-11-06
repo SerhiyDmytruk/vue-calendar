@@ -123,10 +123,27 @@ defineExpose({ events })
       events-on-month-view="short"
       :overlaps="true"
       small
+      :cell-click-hold="true"
+      :disable-views="['years']"
+      hide-weekends
     >
-      <template #event="{ event }">
-        <div class="vuecal__event-title" :style="{ background: event.color }">
+      <template #event="{ event, view }">
+        <div 
+          class="vuecal__event-title vuecal__event-title--edit" 
+          :style="{ 
+            background: event.color,
+            padding: '2px 6px',
+            borderRadius: '3px',
+            color: 'white',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }"
+        >
           {{ event.title }}
+          <small v-if="view.id === 'month'" class="vuecal__event-time">
+            {{ new Date(event.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}
+          </small>
         </div>
       </template>
       <template #arrow-prev="">Back</template>
@@ -323,11 +340,18 @@ body {
 
 .vuecal__event-title {
   color: white;
-  min-height: 1.75rem;
-  font-size: 1.05em;
-  position: absolute;
+  min-height: 1.5rem;
+  font-size: 0.9em;
   width: 100%;
-  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+
+  .vuecal__event-time {
+    font-size: 0.8em;
+    opacity: 0.9;
+  }
 }
 
 /* Dialog/Modal Styling */
