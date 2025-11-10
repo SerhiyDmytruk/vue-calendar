@@ -28,7 +28,7 @@ const menu = [
 ]
 
 const active = ref('calendar')
-const setActive = (name: 'string') => (active.value = name)
+const setActive = (name: string) => (active.value = name)
 </script>
 
 <template>

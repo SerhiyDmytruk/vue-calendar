@@ -1,167 +1,127 @@
-<script>
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { ref, reactive } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import { INITIAL_EVENTS, createEventId } from './event-utils'
+import { INITIAL_EVENTS, createEventId } from './event-utils.js'
+import type { EventApi, CalendarOptions } from '@fullcalendar/core'
+import type { EventClickArg, DateSelectArg } from '@fullcalendar/core'
 
-export default defineComponent({
-  components: {
-    FullCalendar,
+// State
+const showEditModal = ref(false)
+const selectedEvent = ref<EventApi | null>(null)
+const editedTitle = ref('')
+const currentEvents = ref<EventApi[]>([])
+
+// Calendar Options
+const calendarOptions = reactive<CalendarOptions>({
+  plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+  headerToolbar: {
+    left: 'prev,next today',
+    center: 'title',
+    right: 'dayGridMonth,timeGridWeek,timeGridDay',
   },
-  data() {
-    return {
-      showEditModal: false,
-      selectedEvent: null,
-      editedTitle: '',
-      calendarOptions: {
-        plugins: [
-          dayGridPlugin,
-          timeGridPlugin,
-          interactionPlugin // needed for dateClick
-        ],
-        headerToolbar: {
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay'
-        },
-        initialView: 'dayGridMonth',
-        initialEvents: INITIAL_EVENTS, // alternatively, use the `events` setting to fetch from a feed
-        editable: true,
-        selectable: true,
-        selectMirror: true,
-        dayMaxEvents: true,
-        weekends: true,
-        select: this.handleDateSelect,
-        eventClick: this.handleEventClick,
-        eventsSet: this.handleEvents
-        /* you can update a remote database when these fire:
-        eventAdd:
-        eventChange:
-        eventRemove:
-        */
-      },
-      currentEvents: [],
-    }
-  },
-  methods: {
-    handleWeekendsToggle() {
-      this.calendarOptions.weekends = !this.calendarOptions.weekends // update a property
-    },
-    handleDateSelect(selectInfo) {
-      let title = prompt('Please enter a new title for your event')
-      let calendarApi = selectInfo.view.calendar
-
-      calendarApi.unselect() // clear date selection
-
-      if (title) {
-        calendarApi.addEvent({
-          id: createEventId(),
-          title,
-          start: selectInfo.startStr,
-          end: selectInfo.endStr,
-          allDay: selectInfo.allDay
-        })
-      }
-    },
-    handleEventClick(clickInfo) {
-      this.selectedEvent = clickInfo.event;
-      this.editedTitle = clickInfo.event.title;
-      this.showEditModal = true;
-    },
-    handleEditEvent() {
-      if (this.selectedEvent && this.editedTitle.trim()) {
-        this.selectedEvent.setProp('title', this.editedTitle);
-        this.closeEditModal();
-      }
-    },
-    handleDeleteEvent() {
-      if (this.selectedEvent) {
-        this.selectedEvent.remove();
-        this.closeEditModal();
-      }
-    },
-    closeEditModal() {
-      this.showEditModal = false;
-      this.selectedEvent = null;
-      this.editedTitle = '';
-    },
-    handleEvents(events) {
-      this.currentEvents = events
-    },
-  }
+  initialView: 'dayGridMonth',
+  initialEvents: INITIAL_EVENTS,
+  editable: true,
+  selectable: true,
+  selectMirror: true,
+  dayMaxEvents: true,
+  weekends: true,
+  select: handleDateSelect,
+  eventClick: handleEventClick,
+  eventsSet: handleEvents,
 })
 
+// Event Handlers
+function handleWeekendsToggle() {
+  calendarOptions.weekends = !calendarOptions.weekends
+}
+
+function handleDateSelect(selectInfo: DateSelectArg) {
+  const title = prompt('Please enter a new title for your event')
+  const calendarApi = selectInfo.view.calendar
+
+  calendarApi.unselect() // clear date selection
+
+  if (title) {
+    calendarApi.addEvent({
+      id: createEventId(),
+      title,
+      start: selectInfo.startStr,
+      end: selectInfo.endStr,
+      allDay: selectInfo.allDay,
+    })
+  }
+}
+
+function handleEventClick(clickInfo: EventClickArg) {
+  selectedEvent.value = clickInfo.event
+  editedTitle.value = clickInfo.event.title
+  showEditModal.value = true
+}
+
+function handleEditEvent() {
+  if (selectedEvent.value && editedTitle.value.trim()) {
+    selectedEvent.value.setProp('title', editedTitle.value)
+    closeEditModal()
+  }
+}
+
+function handleDeleteEvent() {
+  if (selectedEvent.value) {
+    selectedEvent.value.remove()
+    closeEditModal()
+  }
+}
+
+function closeEditModal() {
+  showEditModal.value = false
+  selectedEvent.value = null
+  editedTitle.value = ''
+}
+
+function handleEvents(events: EventApi[]) {
+  currentEvents.value = events
+}
 </script>
 
 <template>
-  <div class='demo-app'>
-    <div class='demo-app-sidebar'>
-      <div class='demo-app-sidebar-section'>
-        <h2>Instructions</h2>
-        <ul>
-          <li>Select dates and you will be prompted to create a new event</li>
-          <li>Drag, drop, and resize events</li>
-          <li>Click an event to delete it</li>
-        </ul>
-      </div>
-      <div class='demo-app-sidebar-section'>
-        <label>
-          <input
-            type='checkbox'
-            :checked='calendarOptions.weekends'
-            @change='handleWeekendsToggle'
-          />
-          toggle weekends
-        </label>
-      </div>
-      <div class='demo-app-sidebar-section'>
-        <h2>All Events ({{ currentEvents.length }})</h2>
-        <ul>
-          <li v-for='event in currentEvents' :key='event.id'>
-            <b>{{ event.startStr }}</b>
-            <i>{{ event.title }}</i>
-          </li>
-        </ul>
-      </div>
-    </div>
-    <div class='demo-app-main'>
-      <FullCalendar
-        class='demo-app-calendar'
-        :options='calendarOptions'
-      >
-        <template v-slot:eventContent='arg'>
-          <b>{{ arg.timeText }}</b>
-          <i>{{ arg.event.title }}</i>
-        </template>
-      </FullCalendar>
-    </div>
+  <div class="demo-app-main">
+    <FullCalendar class="demo-app-calendar" :options="calendarOptions">
+      <template #eventContent="{ timeText, event }">
+        <div class="flex items-center gap-1">
+          <b>{{ timeText }}</b>
+          <i>{{ event.title }}</i>
+        </div>
+      </template>
+    </FullCalendar>
+  </div>
 
-    <!-- Edit Event Modal -->
-    <div v-if="showEditModal" class="modal-overlay">
-      <div class="modal-content">
-        <h2>Edit Event</h2>
-        <div class="form-group">
-          <label>Event Title:</label>
-          <input 
-            type="text" 
-            v-model="editedTitle"
-            class="form-control"
-            @keyup.enter="handleEditEvent"
-          />
-        </div>
-        <div class="modal-actions">
-          <button @click="handleEditEvent" class="btn-save">Save Changes</button>
-          <button @click="handleDeleteEvent" class="btn-delete">Delete Event</button>
-          <button @click="closeEditModal" class="btn-cancel">Cancel</button>
-        </div>
+  <!-- Edit Event Modal -->
+  <div v-if="showEditModal" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Edit Event</h2>
+      <div class="form-group">
+        <label>Event Title:</label>
+        <input
+          type="text"
+          v-model="editedTitle"
+          class="form-control"
+          @keyup.enter="handleEditEvent"
+        />
+      </div>
+      <div class="modal-actions">
+        <button @click="handleEditEvent" class="btn-save">Save Changes</button>
+        <button @click="handleDeleteEvent" class="btn-delete">Delete Event</button>
+        <button @click="closeEditModal" class="btn-cancel">Cancel</button>
       </div>
     </div>
   </div>
 </template>
 
-<style lang='css'>
+<style lang="css">
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -218,7 +178,7 @@ export default defineComponent({
 }
 
 .btn-save {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
 }
 
@@ -247,14 +207,19 @@ li {
   padding: 0;
 }
 
-b { /* used for event dates/times */
+b {
+  /* used for event dates/times */
   margin-right: 3px;
 }
 
 .demo-app {
   display: flex;
   min-height: 100%;
-  font-family: Arial, Helvetica Neue, Helvetica, sans-serif;
+  font-family:
+    Arial,
+    Helvetica Neue,
+    Helvetica,
+    sans-serif;
   font-size: 14px;
 }
 
@@ -274,9 +239,9 @@ b { /* used for event dates/times */
   padding: 3em;
 }
 
-.fc { /* the calendar root */
+.fc {
+  /* the calendar root */
   max-width: 1100px;
   margin: 0 auto;
 }
-
 </style>

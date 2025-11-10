@@ -4,4 +4,4 @@ declare module '*.vue' {
   export default component
 }
 
-declare module 'vue-cal';
+declare module 'vue-cal'

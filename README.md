@@ -1,6 +1,6 @@
 # calendar-dragndrop
 
-This template should help get you started developing with Vue 3 in Vite. [Library which was used](https://antoniandre.github.io/vue-cal-v4/)
+This template should help get you started developing with Vue 3 in Vite. [Library which was used](https://fullcalendar.io/docs/vue)
 
 ## Recommended IDE Setup
 
